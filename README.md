@@ -1,8 +1,6 @@
 # wshobson-agents-deploy
 
-Converts [wshobson/agents](https://github.com/wshobson/agents) (Claude Code format) to any supported agent platform.
-
-The product is **the migration code itself**, not the resulting artifacts. Rerunnable every time the upstream CC plugin marketplace changes. Architecture is **target-pluggable**: source is always CC, output is OpenCode (default), Pi, Hermes, etc. Adding a target means writing a target module, not forking the tool.
+Converts [wshobson/agents](https://github.com/wshobson/agents) (Claude Code format) to any supported agent platform. Architecture is **target-pluggable**: source is always CC, output is OpenCode (default), Pi, Hermes, etc.
 
 ## Quick Start
 
