@@ -70,6 +70,23 @@ Each target defines its own output format. See the target's `SPEC.md` for detail
 | Pi | `targets/pi/SPEC.md` | (TBD) |
 | Hermes | `targets/hermes/SPEC.md` | (TBD) |
 
+## Agent Naming & Plugin Context
+
+CC agents live in plugin-scoped directories (`plugins/<plugin>/agents/<agent>.md`) — names only need uniqueness within a plugin. Target platforms vary in how they handle this:
+
+| Platform | Subdir discovery | Agent reference | Naming rule |
+|----------|-----------------|-----------------|-------------|
+| OpenCode | ✅ Recursive `**/*.md` | Flat `@name` from frontmatter | `{plugin}-{agent}` — unique global refs |
+| Pi (TBD) | ? | ? | Verify before implementing |
+| Hermes (TBD) | ? | ? | Verify before implementing |
+
+**Key principle for any target integration**: Determine two things before deciding how to name agents:
+
+1. **File placement** — Does the target discover agents from subdirectories, or only from a flat directory? Nested dirs preserve plugin grouping and avoid file collisions; flat dirs require prefixing the filename itself.
+2. **Reference namespace** — Does the target use `@name` references that are globally unique, or are they scoped (e.g., `@plugin/agent`)? If flat/global, the `name` field must be prefixed. If namespaced, short names work.
+
+The same applies to commands and skills. If any share a global namespace, prefix to avoid collisions.
+
 ## Adding a New Target
 
 Create `targets/<name>/` with:

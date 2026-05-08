@@ -4,14 +4,14 @@
 
 ```
 opencode/
-├── agents/              # agents/<agent-name>.md
-│   └── <agent-name>.md
+├── agents/              # agents/<plugin>/<agent>.md
+│   └── <plugin>/
+│       └── <agent>.md
 ├── commands/            # commands/<command-name>.md
 │   └── <command-name>.md
 ├── skills/              # skills/<name>/SKILL.md
 │   └── <skill-name>/
 │       └── SKILL.md
-├── opencode.json        # Config
 └── AGENTS.md            # Rules file
 ```
 
@@ -19,20 +19,21 @@ opencode/
 
 | CC Field | OC Field | Rule |
 |----------|----------|------|
-| `name` | (filename) | `{name}.md` |
+| `name` | (filename) | `<plugin>/<name>.md` inside `agents/` |
+| `name` | `name` | `{plugin}-{name}` (prefixed for unique `@ref`) |
 | `description` | `description` | Pass through |
-| `model: opus` | `model: opus` | Kept as enum; `install` maps via `swap` |
+| `model: opus` | `model: opus` | Kept as enum; `deploy` maps via `swap` |
 | `model: sonnet` | `model: sonnet` | |
 | `model: haiku` | `model: haiku` | |
 | `model: inherit` | (omit) | Leave unset |
-| `color` | `color` | Pass through |
+| `color` | `color` | Named colors mapped to hex: `cyan→#00BCD4`, `blue→#2196F3`, `green→#4CAF50`, `magenta→#E91E63`, `red→#F44336`, `yellow→#FFC107` |
 | `tools: Read, Grep` | `permission: { read: allow, grep: allow }` | Listed = `allow`, others = `deny` |
 | (none) | `mode: subagent` | All CC agents become subagents |
 | Body | Body | Pass through |
 
 ### Model Tier Mapping
 
-Used by `swap` and `install`:
+Used by `swap` and `deploy`:
 
 | CC Enum | OC Model ID |
 |---------|------------|
@@ -101,16 +102,7 @@ Same logic for per-project `opencode.json`/`opencode.jsonc` and `tui.json`/`tui.
 
 ### AGENTS.md Integration
 
-- If `AGENTS.md` doesn't exist at target, create it
-- If `@WSHOBSON_AGENTS.md` already present, skip
-- Otherwise append:
-  ```markdown
-  ## Managed Agents
-
-  @WSHOBSON_AGENTS.md
-  ```
-- Create `WSHOBSON_AGENTS.md` with full migrated agent instructions
-- On `remove`: clean the `@WSHOBSON_AGENTS.md` reference, delete `WSHOBSON_AGENTS.md`
+No integration — agents are self-discovered by OpenCode from `agents/` subdirectory.
 
 ### Manifest
 

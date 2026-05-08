@@ -1,23 +1,56 @@
 # CLI Commands
 
+## `install`
+
+```
+# Launcher (recommended):
+./agents.sh install [--target opencode] [--source-repo https://github.com/wshobson/agents]
+                    [--source-branch main] [--cache-dir ~/.cache/wshobson-agents]
+                    [--source <local-cc-path>] [--output ./<target>] [--dest <target-default>]
+# Direct:
+python install.py [<same-args>]
+```
+
+Runs `convert` then `deploy` in one step: clones the CC source repo (or uses `--source`), converts to target format, and deploys to the target config directory. Accepts all convert and deploy options.
+
+**Options:**
+- All options from `convert` (see above)
+- `--dest` — deploy destination (default: target's global config dir)
+
+---
+
 ## `convert`
 
 ```
-python convert.py --target <name> [--source-repo https://github.com/wshobson/agents] [--output ./<target>]
+# Launcher (recommended — checks prerequisites first):
+./agents.sh convert [--target opencode] [--source-repo https://github.com/wshobson/agents]
+                    [--source-branch main] [--cache-dir ~/.cache/wshobson-agents]
+                    [--source <local-path>] [--output ./<target>]
+# Direct:
+python convert.py [<same-args>]
 ```
 
-Reads CC format from the source repo and writes target format.
+> Windows: `agents.ps1` instead of `./agents.sh`
+
+Reads CC format from the source repo and writes target format. Defaults to OpenCode target.
+
+**Options:**
+- `--target` (default: `"opencode"`)
+- `--source-repo` (default: `"https://github.com/wshobson/agents"`)
+- `--source-branch` (default: `"main"`)
+- `--cache-dir` (default: `~/.cache/wshobson-agents`)
+- `--source` — local path (skips clone)
+- `--output` — output directory (default: `./<target output dir>`)
 
 **Operations:**
 1. Clone/fetch source repo (unless `--source` given)
 2. **Sanity check source structure**: Validate the CC repo has expected layout and warn on any deviation (see below)
 3. Parse `marketplace.json` to discover all plugins
 4. For each plugin, read `plugin.json` metadata
-5. Convert each `agents/*.md` → `<output>/agents/<name>.md` (model enums preserved as-is)
+5. Convert each `agents/*.md` → `<output>/agents/<plugin>/<name>.md` (model enums preserved as-is)
 6. Convert each `commands/*.md` → `<output>/commands/<name>.md`
 7. Copy each `skills/<name>/SKILL.md` → `<output>/skills/<name>/SKILL.md`
 8. Generate config file (delegated to target module)
-9. Generate rules/instructions file (delegated to target module)
 
 ### Source Sanity Check
 
@@ -46,18 +79,26 @@ Warnings print to stderr with `[WARN]` prefix. A summary line shows `N warnings,
 
 ---
 
-## `install`
+## `deploy`
 
 ```
-python install.py --target <name> [--source ./<target>] [--dest <target-default>]
+# Launcher (recommended):
+./agents.sh deploy [--target opencode] [--source ./<target>] [--dest <target-default>]
+# Direct:
+python deploy.py [<same-args>]
 ```
 
-Deploys converted files. `--target` selects which target module's install logic applies (required, no default). The target module defines default paths for `--source` and `--dest` (see `targets/<name>/SPEC.md`).
+Deploys previously converted files. Unlike `install`, this skips the clone+convert step — it reads already-converted files from `--source` and copies them to `--dest`. Defaults to OpenCode target.
 
-`--dest` resolution rules (implemented by the target module):
-1. **Not provided** → use the target's global directory
-2. **Git repo root** (has `.git` subdirectory) → translate via `target.project_config_dir()`
-3. **Any other path** → use as-is
+**Options:**
+- `--target` (default: `"opencode"`)
+- `--source` — converted files directory (default: `./<target output dir>`)
+- `--dest` — deploy destination (default: target's global config dir)
+
+`--dest` resolution:
+- **Not provided** → use the target's global config directory (e.g. `~/.config/opencode`)
+- **Provided + is a git repo root** (has `.git`) → translate via `target.project_config_dir()`
+- **Provided + any other path** → use as-is
 
 **Operations:**
 1. **Detect config format**: Target-specific (see target SPEC)
@@ -66,26 +107,32 @@ Deploys converted files. `--target` selects which target module's install logic 
 4. Copy all skills from source to target skills dir
 5. Copy tools/plugins as needed
 6. **Merge config**:
-   - First install: back up original config
+   - First deploy: back up original config
    - Subsequent: do NOT overwrite backup
-7. **Integrate with target's rules file** (target-specific, see target SPEC)
-8. **Create compiled instruction file** with full migrated agent instructions
-9. **Record original model enums** (first install only): Read `model:` from each deployed agent file
-10. **Swap model enums → target model IDs** (first install only): Apply default tier→ID mapping via internal `swap` call
-11. **Generate manifest** with deployed files, config format, and pre-swap model enums
-12. Run target validation (target-specific, see target SPEC)
+7. **Record original model enums** (first deploy only): Read `model:` from each deployed agent file
+8. **Swap model enums → target model IDs** (first deploy only): Apply default tier→ID mapping via internal `swap` call
+9. **Generate manifest** with deployed files, config format, and pre-swap model enums
+10. Run target validation (target-specific, see target SPEC)
 
 ---
 
 ## `remove`
 
 ```
-python remove.py [--manifest <path>] [--force]
+# Launcher (recommended):
+./agents.sh remove [--target opencode] [--dest <target-default>] [--force]
+# Direct:
+python remove.py [<same-args>]
 ```
 
-Undoes `install` using the manifest. Safe to call multiple times (manifest deleted on first remove).
+Undoes `install` using the manifest. Defaults to OpenCode target. Safe to call multiple times (manifest deleted on first remove).
 
 Prompts once for confirmation before removing any files. Use `--force` to skip the prompt.
+
+**Options:**
+- `--target` (default: `"opencode"`)
+- `--dest` — install destination (default: target's global config dir)
+- `--force` — skip confirmation prompt
 
 **Operations:**
 1. If manifest doesn't exist, exit (nothing to remove)
@@ -93,29 +140,30 @@ Prompts once for confirmation before removing any files. Use `--force` to skip t
 3. Read manifest → get deployed file list
 4. Delete each deployed file
 5. Clean up empty directories
-5. **Restore target's rules file** (target-specific, see target SPEC — e.g. OC removes `@WSHOBSON_AGENTS.md` ref from AGENTS.md)
-6. **Delete compiled instruction file** (target-specific — e.g. OC deletes `WSHOBSON_AGENTS.md`)
-7. Restore original config from pre-migration backup
-8. Delete backup file
-9. Delete manifest
+6. Restore original config from pre-migration backup
+7. Delete backup file
+8. Delete manifest
 
 ---
 
 ## `swap`
 
 ```
-python swap.py --target <name> [--manifest <path>] <from> <to>
+# Launcher (recommended):
+./agents.sh swap [--target opencode] [--dest <target-default>] <from> <to>
+# Direct:
+python swap.py [<same-args>]
 ```
 
-Swaps `model:` frontmatter for deployed agents whose original CC model tier matches `<from>`. `install` invokes this internally on first deploy.
+Swaps `model:` frontmatter for deployed agents whose original CC model tier matches `<from>`. `install` invokes this internally on first deploy. Defaults to OpenCode target.
 
-`--target` selects which target's manifest to use (required). The manifest path defaults to the target's standard manifest location (see target SPEC); use `--manifest` to override.
+**Options:**
+- `--target` (default: `"opencode"`)
+- `--dest` — install destination (default: target's global config dir)
 
-**Parameters:**
-- `--target`: target module name (required)
-- `from`: `opus`, `sonnet`, `haiku`, or `inherit`
-- `to`: target model ID
-- `--manifest`: manifest path override (optional)
+**Positional arguments:**
+- `from` — `opus`, `sonnet`, `haiku`, or `inherit`
+- `to` — target model ID
 
 **Operations:**
 1. Load manifest; read `agent_models` for each agent's original model enum
@@ -128,6 +176,8 @@ Swaps `model:` frontmatter for deployed agents whose original CC model tier matc
 
 # Manifest
 
+All paths in the manifest use POSIX-style `/` separators regardless of OS. This ensures portability across platforms — the manifest can be inspected, compared, or processed on any system without separator mismatches.
+
 ## Format
 
 ```json
@@ -137,8 +187,8 @@ Swaps `model:` frontmatter for deployed agents whose original CC model tier matc
   "source": "<target>",
   "target": "<install-path>",
   "files": {
-    "agents/<name>.md": {
-      "source": "<target>/agents/<name>.md",
+    "agents/<plugin>/<name>.md": {
+      "source": "<target>/agents/<plugin>/<name>.md",
       "checksum": "sha256-hash"
     },
     "skills/<name>/SKILL.md": {
@@ -146,17 +196,8 @@ Swaps `model:` frontmatter for deployed agents whose original CC model tier matc
       "checksum": "sha256-hash"
     }
   },
-  "agents_modifications": {
-    "AGENTS.md": {
-      "added_lines": ["@<INSTRUCTIONS_FILE>.md"],
-      "checksum": "sha256-hash"
-    }
-  },
   "agent_models": {
-    "agents/<name>.md": { "original": "sonnet" }
-  },
-  "config_backups": {
-    "<config-file>": "backups/<config-file>.timestamp"
+    "agents/<plugin>/<name>.md": { "original": "sonnet" }
   }
 }
 ```
@@ -165,7 +206,7 @@ Swaps `model:` frontmatter for deployed agents whose original CC model tier matc
 
 # Validation Strategy
 
-After each `convert` and `install`:
+After each `convert`, `deploy`, and `install`:
 
 1. **Structural**: Verify directory layout matches target expectations (see target SPEC)
 2. **Content**: Frontmatter correctness
@@ -174,6 +215,6 @@ After each `convert` and `install`:
    - `name` matches `^[a-z0-9]+(-[a-z0-9]+)*$`
 3. **Idempotency**:
    - `convert` ×2: byte-identical output
-   - `install` ×2: same manifest, same checksums. Backup NOT overwritten.
-   - `remove` after `install` ×2: restores true original config
+   - `deploy` ×2: same manifest, same checksums. Backup NOT overwritten.
+   - `remove` after `deploy` ×2: restores true original config
    - `remove` ×2: second call is no-op

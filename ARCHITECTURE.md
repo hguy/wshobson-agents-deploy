@@ -34,8 +34,9 @@ Each target also provides install/remove-specific behavior: config format detect
 
 | Command | Entry Point | Description |
 |---------|-------------|-------------|
+| `install` | `install.py --target X` | Chains `convert` + `deploy` (clone → convert → deploy) |
 | `convert` | `convert.py --target X` | Reads CC source, writes target format |
-| `install` | `install.py --target X` | Deploys converted files to config dir |
+| `deploy` | `deploy.py --target X` | Deploys converted files to config dir |
 | `remove` | `remove.py` | Removes deployed files via manifest |
 | `swap` | `swap.py <from> <to>` | Swaps model IDs in deployed agents |
 
@@ -63,6 +64,7 @@ Logic:
 - `typer` for CLI interface
 - `pydantic` for config/models
 - `ruff` for linting (with type annotation enforcement)
+- `mypy` for static type checking (strict mode)
 - All function signatures **must** have full type annotations
 
 ## Implementation Files
@@ -77,7 +79,8 @@ Logic:
 ├── README.md                    # User-facing project overview
 ├── pyproject.toml               # Python project config
 ├── convert.py                   # convert command
-├── install.py                   # install command
+├── deploy.py                    # deploy command
+├── install.py                   # install command (chains convert + deploy)
 ├── remove.py                    # remove command
 ├── swap.py                      # swap command
 ├── converter.py                 # Shared: target-agnostic conversion core
