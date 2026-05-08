@@ -164,7 +164,9 @@ uv run python remove.py --target opencode --dest /tmp/dest --force
 
 ## Windows Test Protocol
 
-Test `agents.ps1` in a **Windows Docker container** (requires Docker Desktop in Windows container mode). Use `mcr.microsoft.com/windows/servercore:ltsc2022` as the base image (has PowerShell but not winget/choco — auto-install exercises the error path).
+Test `agents.ps1` in a **Windows Docker container** (requires Docker Desktop in Windows container mode). Use `mcr.microsoft.com/windows/servercore:ltsc2022` as the base image.
+
+> **Note**: Windows server containers do not include winget or choco, so `agents.ps1`'s auto-install will always hit the error path in this environment. The full auto-install success path (winget) can only be tested on a real Windows desktop or VM. These tests validate the error handling and the core pipeline respectively.
 
 ### W1. Fresh-Start Test (`-y` auto-install)
 
@@ -176,7 +178,7 @@ docker run -d --name test-win -v "$PWD:C:\test" `
 docker exec test-win powershell -Command "C:\test\agents.ps1 -y convert --help 2>&1"
 ```
 
-**Expected**: Python 3.12+ not found → tries uv/winget/choco → none available → "No supported package manager found" → exit 1.
+**Expected**: Python 3.12+ not found → `agents.ps1` tries uv/winget/choco → none available → "No supported package manager found" → exit 1. Validates the fallback error path is correct.
 
 ### W2. Prompt-Abort Test (user declines)
 
@@ -185,12 +187,12 @@ echo "n" | docker exec -i test-win powershell -Command "C:\test\agents.ps1 conve
 # → "Aborted. Python 3.12+ is required."  exit 1
 ```
 
-### W3. Full Pipeline Test (with deps)
+### W3. Full Pipeline Test
 
-Host-side prep: install Python 3.12 and git in the container (winget unavailable). Creates container-local venv to avoid host mount permission conflicts.
+Since `agents.ps1` cannot auto-install prerequisites in a server container, Python 3.12 and git are installed manually first. This tests the core pipeline (convert → install → swap → remove) on Windows, **not** the launcher's prerequisite feature.
 
 ```powershell
-# Install Python + git
+# Install Python + git (agents.ps1 can't do this in server containers — no winget)
 docker exec test-win powershell -Command @"
   Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.12.9/python-3.12.9-amd64.exe' -OutFile C:\python-installer.exe -UseBasicParsing
   Start-Process C:\python-installer.exe -ArgumentList '/quiet InstallAllUsers=1 PrependPath=1' -Wait; Remove-Item C:\python-installer.exe
