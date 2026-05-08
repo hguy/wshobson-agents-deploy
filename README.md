@@ -1,11 +1,13 @@
-# wshobson-agents-deploy
+# Wshobson Agents Anywhere
 
-Converts [wshobson/agents](https://github.com/wshobson/agents) (Claude Code format) to any supported agent platform. Architecture is **target-pluggable**: source is always CC, output is OpenCode (default), Pi, Hermes, etc.
+Deploys [wshobson/agents](https://github.com/wshobson/agents) — intelligent automation and multi-agent orchestration for Claude Code — to your agent platform of choice.
+
+The [wshobson/agents](https://github.com/wshobson/agents) repository provides 80+ plugins with 185 specialized agents and 150+ skills covering development, DevOps, security, data engineering, UI design, and more. This tool converts those Claude Code agents to [OpenCode](https://opencode.ai) (default), Pi, Hermes, or other targets so you're not locked into a single client.
 
 ## Quick Start
 
 ```bash
-# Convert agents from the upstream repo
+# Convert agents from the source repo
 ./agents.ps1 convert              # Windows
 ./agents.sh convert               # macOS/Linux
 

@@ -1,10 +1,10 @@
-# WSHOBSON Agents Deploy — Repo Rules
+# WsHobson Agents Anywhere — Repo Rules
 
 ## Project
 
-Python 3.12+ migration tool converting [wshobson/agents](https://github.com/wshobson/agents) (Claude Code format) to OpenCode (and other target platforms).
+Python 3.12+ migration tool converting [wshobson/agents](https://github.com/wshobson/agents) (Claude Code) to OpenCode and other agent platforms.
 
-The product is **the migration code itself**, not the resulting artifacts. Rerunnable every time the upstream CC plugin marketplace changes. Accuracy of conversion (field mapping, file placement, naming conventions) is the primary quality metric. Architecture is **target-pluggable**: source is always CC, output is OpenCode (default), Pi, Hermes, etc. Adding a target means writing a target module, not forking the tool.
+The product is **the migration code itself**, not the resulting artifacts. Rerunnable every time the wshobson/agents plugin marketplace changes. Accuracy of conversion (field mapping, file placement, naming conventions) is the primary quality metric. Architecture is **target-pluggable**: source is always CC, output is OpenCode (default), Pi, Hermes, etc. Adding a target means writing a target module, not forking the tool.
 
 ## Build & Run
 
